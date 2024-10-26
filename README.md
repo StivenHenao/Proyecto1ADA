@@ -21,7 +21,9 @@ El repositorio contiene los siguientes archivos:
   - **PruebasTerminal.py**: Pruebas para la implementación de la Terminal Inteligente.
   - **PruebasSubasta.py**: Pruebas para la implementación de la Subasta Pública.
   - **GUI.py**: Interfaz gráfica de usuario para la Terminal Inteligente.
-**Informe Proyecto 1 ADA II:** Archivo PDF que contiene las respuestas a cada uno de los puntos planteados en el enunciado y las complejidades computacionales de las 3 soluciones: ingenua, dinámica y voraz.
+
+**Informe Proyecto 1 ADA II:**
+Archivo PDF que contiene las respuestas a cada uno de los puntos planteados en el enunciado y las complejidades computacionales de las 3 soluciones: ingenua, dinámica y voraz.
 
 ## Instrucciones para Ejecutar el Código
 
