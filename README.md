@@ -1,9 +1,13 @@
 # Proyecto: Terminal Inteligente y Subasta Pública
 
 ## Integrantes del Grupo
+
 Rodas Arango, Juan Manuel - 2259571
+
 García Castañeda, Alex - 2259517
+
 Gómez Agudelo, Juan Sebastián - 2259474
+
 Henao Aricapa, Stiven - 2259603
 
 ## Descripción del Proyecto
