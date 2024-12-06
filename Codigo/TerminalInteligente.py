@@ -15,6 +15,8 @@ Fecha: 2024-10-25
 
 import copy
 
+costos_global = {'a': 1, 'd': 2, 'r': 3, 'i': 2, 'k': 1}
+
 # Funciones de operaciones
 def advance(cadena, cursor, costos):
     if cursor < len(cadena):
@@ -162,15 +164,16 @@ def solucion_dinamica(cadena_inicial, cadena_final, costos_operaciones):
     len_inicial = len(cadena_inicial)
     len_final = len(cadena_final)
     matriz_costos = [[0] * (len_final + 1) for _ in range(len_inicial + 1)]
-    
+    kill_aplicado = [False] * (len_inicial + 1)  # Marca si se ha aplicado `kill` en cada fila
+
     # Inicializar la primera columna
     for i in range(1, len_inicial + 1):
-        matriz_costos[i][0] = matriz_costos[i-1][0] + costos_operaciones['d']
-    
+        matriz_costos[i][0] = matriz_costos[i - 1][0] + costos_operaciones['d']
+
     # Inicializar la primera fila
     for j in range(1, len_final + 1):
-        matriz_costos[0][j] = matriz_costos[0][j-1] + costos_operaciones['i']
-    
+        matriz_costos[0][j] = matriz_costos[0][j - 1] + costos_operaciones['i']
+
     # Llenar la matriz de costos
     for i in range(1, len_inicial + 1):
         for j in range(1, len_final + 1):
@@ -180,8 +183,19 @@ def solucion_dinamica(cadena_inicial, cadena_final, costos_operaciones):
                 costo_reemplazo = matriz_costos[i - 1][j - 1] + costos_operaciones['r']
             costo_insercion = matriz_costos[i][j - 1] + costos_operaciones['i']
             costo_eliminacion = matriz_costos[i - 1][j] + costos_operaciones['d']
-            matriz_costos[i][j] = min(costo_reemplazo, costo_insercion, costo_eliminacion)
-    
+            costo_kill = matriz_costos[i][0] + costos_operaciones['k']
+
+            # Si `kill` se ha aplicado en una fila anterior, ignoramos `delete`
+            if kill_aplicado[i - 1]:
+                costo_eliminacion = float('inf')
+
+            # Elegir el mínimo entre todas las opciones
+            matriz_costos[i][j] = min(costo_reemplazo, costo_insercion, costo_eliminacion, costo_kill)
+
+            # Marcar si se aplica `kill`
+            if matriz_costos[i][j] == costo_kill:
+                kill_aplicado[i] = True
+
     # Reconstruir operaciones
     i, j = len_inicial, len_final
     operaciones = []
@@ -191,17 +205,21 @@ def solucion_dinamica(cadena_inicial, cadena_final, costos_operaciones):
             i -= 1
             j -= 1
         elif i > 0 and j > 0 and matriz_costos[i][j] == matriz_costos[i - 1][j - 1] + costos_operaciones['r']:
-            operaciones.append(f'replace with {cadena_final[j-1]}')
+            operaciones.append(f'replace with {cadena_final[j - 1]}')
             i -= 1
             j -= 1
         elif j > 0 and matriz_costos[i][j] == matriz_costos[i][j - 1] + costos_operaciones['i']:
-            operaciones.append(f'insert {cadena_final[j-1]}')
+            operaciones.append(f'insert {cadena_final[j - 1]}')
             j -= 1
-        elif i > 0 and matriz_costos[i][j] == matriz_costos[i - 1][j] + costos_operaciones['d']:
+        elif i > 0 and not kill_aplicado[i] and matriz_costos[i][j] == matriz_costos[i - 1][j] + costos_operaciones['d']:
             operaciones.append('delete')
             i -= 1
+        elif matriz_costos[i][j] == matriz_costos[i][0] + costos_operaciones['k']:
+            operaciones.append('kill')
+            i = 0  # Después de un 'kill', no quedan caracteres por eliminar
         else:
             break
+
     operaciones.reverse()
     costo_total = matriz_costos[len_inicial][len_final]
     return matriz_costos, costo_total, operaciones
@@ -225,30 +243,35 @@ def solucion_voraz(cadena_inicial, cadena_final, costos):
                 costo_total += costos['a']
                 operaciones.append('advance')
             else:
-                # Si son diferentes, seleccionamos la operación óptima entre reemplazar y avanzar
+                # Si son diferentes, seleccionamos la operación óptima entre reemplazar, eliminar, insertar
                 costo_replace = costos['r']
                 costo_delete = costos['d']
                 costo_insert = costos['i']
 
                 # Verificamos la operación más barata
-                if costo_replace <= costo_delete and costo_replace <= costo_insert:
+                if cursor_inicial < len(cadena) and costo_delete <= costo_replace and costo_delete <= costo_insert:
+                    # Eliminar el carácter en la cadena inicial
+                    cadena.pop(cursor_inicial)
+                    costo_total += costo_delete
+                    operaciones.append('delete')
+                elif cursor_inicial < len(cadena) and costo_delete > costo_replace and costo_delete > costo_insert:
+                    # Aplicar kill
+                    cadena = cadena[:cursor_inicial]
+                    costo_total += costos['k']
+                    operaciones.append('kill')
+                elif costo_replace <= costo_delete and costo_replace <= costo_insert:
                     # Reemplazar el carácter
                     cadena[cursor_inicial] = cadena_final[cursor_final]
                     cursor_inicial += 1
                     cursor_final += 1
                     costo_total += costo_replace
                     operaciones.append(f'replace with {cadena_final[cursor_final - 1]}')
-                elif costo_delete <= costo_insert:
-                    # Eliminar el carácter en la cadena inicial
-                    cadena.pop(cursor_inicial)
-                    costo_total += costo_delete
-                    operaciones.append('delete')
                 else:
                     # Insertar un carácter desde la cadena final en la cadena inicial
                     cadena.insert(cursor_inicial, cadena_final[cursor_final])
                     cursor_inicial += 1
                     cursor_final += 1
-                    costo_total += costo_insert
+                    costo_total += costos['i']
                     operaciones.append(f'insert {cadena_final[cursor_final - 1]}')
 
         # Si llegamos al final de la cadena inicial pero aún hay caracteres en la cadena final
@@ -262,10 +285,22 @@ def solucion_voraz(cadena_inicial, cadena_final, costos):
 
         # Si llegamos al final de la cadena final pero aún quedan caracteres en la cadena inicial
         elif cursor_inicial < len(cadena):
-            # Eliminar los caracteres sobrantes
-            cadena.pop(cursor_inicial)
-            costo_total += costos['d']
-            operaciones.append('delete')
+            # Verificar si usar 'kill' es más barato que eliminar
+            if cursor_inicial < len(cadena):
+                # Eliminar los caracteres sobrantes uno por uno
+                costo_kill = costos['k']
+                costo_resto = (len(cadena) - cursor_inicial) * costos['d']
+
+                if costo_kill < costo_resto:
+                    # Aplicar kill
+                    cadena = cadena[:cursor_inicial]
+                    costo_total += costos['k']
+                    operaciones.append('kill')
+                else:
+                    # Eliminar los caracteres sobrantes uno por uno
+                    cadena.pop(cursor_inicial)
+                    costo_total += costos['d']
+                    operaciones.append('delete')
 
     return ''.join(cadena), costo_total, operaciones
 
