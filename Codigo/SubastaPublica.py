@@ -149,35 +149,3 @@ def voraz(A, ofertas, precio_gobierno):
 
     
     return mejor_asignacion, mejor_valor
-
-
-# Ejemplo de uso
-
-# Datos de entrada
-A = 1000
-ofertas = [(50, 100, 600)]
-precio_gobierno = 100
-
-# Calcular la solución por fuerza bruta
-asignacion_fb, valor_fb = fuerza_bruta(A, ofertas, precio_gobierno)
-print("Fuerza Bruta:")
-
-print("Asignación de acciones:", asignacion_fb)
-print("Valor total:", valor_fb)
-
-# Calcular la solución por programación dinámica
-asignacion_pd, valor_pd, dp, asignaciones = programacion_dinamica(A, ofertas, precio_gobierno)
-print("\nProgramación Dinámica:")
-print("Asignación de acciones:", asignacion_pd)
-print("Valor total:", valor_pd)
-print("Tabla de programación dinámica:")
-print(dp)
-print("Tabla de asignaciones:")
-for asign in asignaciones:
-    print(asign)
-
-# Calcular la solución voraz
-asignacion_v, valor_v = voraz(A, ofertas, precio_gobierno)
-print("\nVoraz:")
-print("Asignación de acciones:", asignacion_v)
-print("Valor total:", valor_v)
