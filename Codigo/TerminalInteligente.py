@@ -164,7 +164,7 @@ def solucion_dinamica(cadena_inicial, cadena_final, costos_operaciones):
     len_inicial = len(cadena_inicial)
     len_final = len(cadena_final)
     matriz_costos = [[0] * (len_final + 1) for _ in range(len_inicial + 1)]
-    kill_aplicado = [False] * (len_inicial + 1)  # Marca si se ha aplicado `kill` en cada fila
+    kill_aplicado = False  # Para rastrear si se ha aplicado `kill`
 
     # Inicializar la primera columna
     for i in range(1, len_inicial + 1):
@@ -185,38 +185,37 @@ def solucion_dinamica(cadena_inicial, cadena_final, costos_operaciones):
             costo_eliminacion = matriz_costos[i - 1][j] + costos_operaciones['d']
             costo_kill = matriz_costos[i][0] + costos_operaciones['k']
 
-            # Si `kill` se ha aplicado en una fila anterior, ignoramos `delete`
-            if kill_aplicado[i - 1]:
-                costo_eliminacion = float('inf')
-
             # Elegir el mínimo entre todas las opciones
             matriz_costos[i][j] = min(costo_reemplazo, costo_insercion, costo_eliminacion, costo_kill)
-
-            # Marcar si se aplica `kill`
-            if matriz_costos[i][j] == costo_kill:
-                kill_aplicado[i] = True
 
     # Reconstruir operaciones
     i, j = len_inicial, len_final
     operaciones = []
     while i > 0 or j > 0:
-        if i > 0 and j > 0 and cadena_inicial[i - 1] == cadena_final[j - 1]:
+        if not kill_aplicado and matriz_costos[i][j] == matriz_costos[i][0] + costos_operaciones['k']:
+            operaciones.append('kill')
+            kill_aplicado = True
+            i = 0
+        elif kill_aplicado:
+            if j > 0 and matriz_costos[i][j] == matriz_costos[i][j - 1] + costos_operaciones['i']:
+                operaciones.append(f'insert {cadena_final[j-1]}')
+                j -= 1
+            else:
+                break
+        elif i > 0 and j > 0 and cadena_inicial[i - 1] == cadena_final[j - 1]:
             operaciones.append('advance')
             i -= 1
             j -= 1
         elif i > 0 and j > 0 and matriz_costos[i][j] == matriz_costos[i - 1][j - 1] + costos_operaciones['r']:
-            operaciones.append(f'replace with {cadena_final[j - 1]}')
+            operaciones.append(f'replace with {cadena_final[j-1]}')
             i -= 1
             j -= 1
         elif j > 0 and matriz_costos[i][j] == matriz_costos[i][j - 1] + costos_operaciones['i']:
-            operaciones.append(f'insert {cadena_final[j - 1]}')
+            operaciones.append(f'insert {cadena_final[j-1]}')
             j -= 1
-        elif i > 0 and not kill_aplicado[i] and matriz_costos[i][j] == matriz_costos[i - 1][j] + costos_operaciones['d']:
+        elif i > 0 and matriz_costos[i][j] == matriz_costos[i - 1][j] + costos_operaciones['d']:
             operaciones.append('delete')
             i -= 1
-        elif matriz_costos[i][j] == matriz_costos[i][0] + costos_operaciones['k']:
-            operaciones.append('kill')
-            i = 0  # Después de un 'kill', no quedan caracteres por eliminar
         else:
             break
 
